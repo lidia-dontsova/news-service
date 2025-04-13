@@ -4,6 +4,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from deep_translator import GoogleTranslator
 from sklearn.preprocessing import normalize
 import numpy as np
+import re
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 
 def translate_to_english(text):
     return GoogleTranslator(source='auto', target='en').translate(text)
@@ -23,11 +26,11 @@ def find_image_by_cosine_similarity(news_text, csv_path):
     similarity = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
     best_index = similarity.argmax()
 
-    # Получение videoid (ID изображения)
+    # Получение videoid 
     best_videoid = df.iloc[best_index]['videoid']
     best_description = df.iloc[best_index]['description']
 
-    print(f"\n Наиболее подходящее описание (англ.): {best_description}")
+    print(f"\n Наиболее подходящее описание: {best_description}")
     print(f"ID изображения (videoid): {best_videoid}")
 
 def find_image_by_euclidean_distance(news_text, csv_path):
@@ -59,13 +62,57 @@ def find_image_by_euclidean_distance(news_text, csv_path):
     # Находим индекс с минимальным расстоянием
     best_index = np.argmin(distances)
     
-    # Получение videoid (ID изображения)
+    # Получение videoid
     best_videoid = df.iloc[best_index]['videoid']
     best_description = df.iloc[best_index]['description']
     
-    print(f"\n Подходящее описание (англ.): {best_description}")
+    print(f"\n Подходящее описание: {best_description}")
     print(f"ID изображения (videoid): {best_videoid}")
     print(f"Евклидово расстояние: {distances[best_index]:.4f}")
+
+def find_image_by_jaccard_similarity(news_text, csv_path):
+    # Перевод текста новости на английский
+    translated_text = translate_to_english(news_text)
+    
+    # Загрузка описаний из CSV
+    df = pd.read_csv(csv_path)
+    descriptions = df['description'].tolist()
+    
+    # Предварительная обработка текста
+    def preprocess_text(text):
+        # Приведение к нижнему регистру и удаление знаков препинания
+        text = re.sub(r'[^\w\s]', '', text.lower())
+        # Токенизация текста
+        tokens = word_tokenize(text)
+        # Удаление стоп-слов
+        stop_words = set(stopwords.words('english'))
+        filtered_tokens = [w for w in tokens if w not in stop_words]
+        return set(filtered_tokens)
+    
+    # Получение множества токенов для входного текста
+    input_set = preprocess_text(translated_text)
+    
+    # Вычисление коэффициента Жаккара для каждого описания
+    jaccard_scores = []
+    for description in descriptions:
+        desc_set = preprocess_text(description)
+        # Коэффициент Жаккара = размер пересечения / размер объединения
+        intersection = len(input_set.intersection(desc_set))
+        union = len(input_set.union(desc_set))
+        # Избегаем деления на ноль
+        jaccard = intersection / union if union > 0 else 0
+        jaccard_scores.append(jaccard)
+    
+    # Находим индекс с максимальным коэффициентом Жаккара
+    best_index = np.argmax(jaccard_scores)
+    
+    # Получение videoid 
+    best_videoid = df.iloc[best_index]['videoid']
+    best_description = df.iloc[best_index]['description']
+    
+    print(f"\n Наиболее подходящее описание: {best_description}")
+    print(f"ID изображения (videoid): {best_videoid}")
+    print(f"Коэффициент Жаккара: {jaccard_scores[best_index]:.4f}")
 
 if __name__ == "__main__":
     news = input("Введите текст новости: ")
@@ -74,12 +121,15 @@ if __name__ == "__main__":
     print("\n Выберите метод поиска:")
     print("1. Косинусное сходство")
     print("2. Евклидово расстояние")
-    choice = input("Введите номер метода (1 или 2): ")
+    print("3. Коэффициент Жаккара")
+    choice = input("Введите номер метода (1, 2 или 3): ")
     
     if choice == "1":
         find_image_by_cosine_similarity(news, csv_path)
     elif choice == "2":
         find_image_by_euclidean_distance(news, csv_path)
+    elif choice == "3":
+        find_image_by_jaccard_similarity(news, csv_path)
     else:
-        print("Неверный выбор. Используется метод косинусного сходства по умолчанию.")
+        print("Неверный выбор. Метод косинусного сходства по умолчанию.")
         find_image_by_cosine_similarity(news, csv_path)
