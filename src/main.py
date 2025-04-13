@@ -2,6 +2,8 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from deep_translator import GoogleTranslator
+from sklearn.preprocessing import normalize
+import numpy as np
 
 def translate_to_english(text):
     return GoogleTranslator(source='auto', target='en').translate(text)
@@ -25,10 +27,59 @@ def find_image_by_cosine_similarity(news_text, csv_path):
     best_videoid = df.iloc[best_index]['videoid']
     best_description = df.iloc[best_index]['description']
 
-    print(f"\nНаиболее подходящее описание (англ.): {best_description}")
+    print(f"\n Наиболее подходящее описание (англ.): {best_description}")
     print(f"ID изображения (videoid): {best_videoid}")
+
+def find_image_by_euclidean_distance(news_text, csv_path):
+    # Перевод текста новости на английский
+    translated_text = translate_to_english(news_text)
+
+    # Загрузка описаний из CSV
+    df = pd.read_csv(csv_path)
+    descriptions = df['description'].tolist()
+    all_texts = descriptions + [translated_text]
+
+    # Векторизация текстов
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(all_texts)
+    
+    # Нормализация векторов
+    normalized_matrix = normalize(tfidf_matrix)
+    
+    # Получение вектора для входного текста
+    input_vector = normalized_matrix[-1].toarray()
+    
+    # Вычисление евклидовых расстояний
+    distances = []
+    for i in range(len(descriptions)):
+        desc_vector = normalized_matrix[i].toarray()
+        distance = np.linalg.norm(input_vector - desc_vector)
+        distances.append(distance)
+    
+    # Находим индекс с минимальным расстоянием
+    best_index = np.argmin(distances)
+    
+    # Получение videoid (ID изображения)
+    best_videoid = df.iloc[best_index]['videoid']
+    best_description = df.iloc[best_index]['description']
+    
+    print(f"\n Подходящее описание (англ.): {best_description}")
+    print(f"ID изображения (videoid): {best_videoid}")
+    print(f"Евклидово расстояние: {distances[best_index]:.4f}")
 
 if __name__ == "__main__":
     news = input("Введите текст новости: ")
     csv_path = "dataset/descriptions.csv"  # Путь к файлу с описаниями
-    find_image_by_cosine_similarity(news, csv_path)
+    
+    print("\n Выберите метод поиска:")
+    print("1. Косинусное сходство")
+    print("2. Евклидово расстояние")
+    choice = input("Введите номер метода (1 или 2): ")
+    
+    if choice == "1":
+        find_image_by_cosine_similarity(news, csv_path)
+    elif choice == "2":
+        find_image_by_euclidean_distance(news, csv_path)
+    else:
+        print("Неверный выбор. Используется метод косинусного сходства по умолчанию.")
+        find_image_by_cosine_similarity(news, csv_path)
