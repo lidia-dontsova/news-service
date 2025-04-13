@@ -6,7 +6,7 @@ from deep_translator import GoogleTranslator
 def translate_to_english(text):
     return GoogleTranslator(source='auto', target='en').translate(text)
 
-def find_best_image_id(news_text, csv_path='descriptions.csv'):
+def find_image_by_cosine_similarity(news_text, csv_path):
     # Перевод текста новости на английский
     translated_text = translate_to_english(news_text)
 
@@ -28,6 +28,7 @@ def find_best_image_id(news_text, csv_path='descriptions.csv'):
     print(f"\nНаиболее подходящее описание (англ.): {best_description}")
     print(f"ID изображения (videoid): {best_videoid}")
 
-if name == "__main__":
-    news = input("Введите текст новости на русском: ")
-    find_best_image_id(news)
+if __name__ == "__main__":
+    news = input("Введите текст новости: ")
+    csv_path = "dataset/descriptions.csv"  # Путь к файлу с описаниями
+    find_image_by_cosine_similarity(news, csv_path)
