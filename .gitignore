@@ -173,4 +173,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-.download_nltk_data.py
+# NLTK data download script
+download_nltk_data.py
