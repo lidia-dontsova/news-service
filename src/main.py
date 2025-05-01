@@ -34,6 +34,7 @@ def find_image_by_cosine_similarity(news_text, csv_path):
 
     print(f"Наиболее подходящее описание: {best_description}")
     print(f"ID изображения (videoid): {best_videoid}")
+    print(f"Косинусный коэффициент: {similarity[0][best_index]:.4f}")
 
 def find_image_by_euclidean_distance(news_text, csv_path):
     # Перевод текста новости на английский
@@ -183,6 +184,8 @@ if __name__ == "__main__":
     print("3. Коэффициент Жаккара")
     print("4. Семантическое сходство")
     choice = input("Введите номер метода (1, 2, 3 или 4): ")
+
+
     
     if choice == "1":
         find_image_by_cosine_similarity(news, csv_path)
