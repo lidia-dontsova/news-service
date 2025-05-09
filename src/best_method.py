@@ -32,10 +32,15 @@ def find_image_by_cosine_similarity(news_text, csv_path):
     # Получение videoid 
     best_videoid = df.iloc[best_index]['videoid']
     best_description = df.iloc[best_index]['description']
+    cosine_score = similarity[0][best_index]
 
-    print(f"Наиболее подходящее описание: {best_description}")
-    print(f"ID изображения (videoid): {best_videoid}")
-    print(f"Косинусный коэффициент: {similarity[0][best_index]:.4f}")
+    return {
+        'method': 'Косинусное сходство',
+        'videoid': best_videoid,
+        'description': best_description,
+        'score': cosine_score,
+        'normalized_score': cosine_score  # Косинусное сходство уже нормализовано от 0 до 1
+    }
 
 def find_image_by_euclidean_distance(news_text, csv_path):
     # Перевод текста новости на английский
@@ -69,10 +74,19 @@ def find_image_by_euclidean_distance(news_text, csv_path):
     # Получение videoid
     best_videoid = df.iloc[best_index]['videoid']
     best_description = df.iloc[best_index]['description']
+    distance = distances[best_index]
     
-    print(f"Наиболее подходящее описание: {best_description}")
-    print(f"ID изображения (videoid): {best_videoid}")
-    print(f"Евклидово расстояние: {distances[best_index]:.4f}")
+    # Нормализация расстояния (преобразуем в сходство от 0 до 1)
+    # Используем экспоненциальное преобразование для нормализации
+    normalized_score = np.exp(-distance)
+    
+    return {
+        'method': 'Евклидово расстояние',
+        'videoid': best_videoid,
+        'description': best_description,
+        'score': distance,
+        'normalized_score': normalized_score
+    }
 
 def find_image_by_jaccard_similarity(news_text, csv_path):
     # Перевод текста новости на английский
@@ -113,10 +127,15 @@ def find_image_by_jaccard_similarity(news_text, csv_path):
     # Получение videoid 
     best_videoid = df.iloc[best_index]['videoid']
     best_description = df.iloc[best_index]['description']
+    jaccard_score = jaccard_scores[best_index]
     
-    print(f"Наиболее подходящее описание: {best_description}")
-    print(f"ID изображения (videoid): {best_videoid}")
-    print(f"Коэффициент Жаккара: {jaccard_scores[best_index]:.4f}")
+    return {
+        'method': 'Коэффициент Жаккара',
+        'videoid': best_videoid,
+        'description': best_description,
+        'score': jaccard_score,
+        'normalized_score': jaccard_score  # Коэффициент Жаккара уже нормализован от 0 до 1
+    }
 
 def find_image_by_semantic_similarity(news_text, csv_path):
     # Перевод текста новости на английский
@@ -148,32 +167,47 @@ def find_image_by_semantic_similarity(news_text, csv_path):
     # Получение videoid (ID изображения)
     best_videoid = df.iloc[best_index]['videoid']
     best_description = df.iloc[best_index]['description']
+    semantic_score = similarities[best_index]
     
-    print(f"Наиболее подходящее описание: {best_description}")
-    print(f"ID изображения (videoid): {best_videoid}")
-    print(f"Семантическое сходство: {similarities[best_index]:.4f}")
+    return {
+        'method': 'Семантическое сходство',
+        'videoid': best_videoid,
+        'description': best_description,
+        'score': semantic_score,
+        'normalized_score': semantic_score  # Семантическое сходство уже нормализовано от 0 до 1
+    }
+
+def find_best_method(news_text, csv_path):
+    # Получаем результаты всех методов
+    results = [
+        find_image_by_cosine_similarity(news_text, csv_path),
+        find_image_by_euclidean_distance(news_text, csv_path),
+        find_image_by_jaccard_similarity(news_text, csv_path),
+        find_image_by_semantic_similarity(news_text, csv_path)
+    ]
+    
+    # Выводим результаты всех методов
+    print("\nРезультаты всех методов:")
+    print("-" * 50)
+    for result in results:
+        print(f"\nМетод: {result['method']}")
+        print(f"Описание: {result['description']}")
+        print(f"ID изображения: {result['videoid']}")
+        print(f"Обычная оценка: {result['score']:.4f}")
+        print(f"Нормализованная оценка: {result['normalized_score']:.4f}")
+    
+    # Находим лучший метод по нормализованной оценке
+    best_result = max(results, key=lambda x: x['normalized_score'])
+    
+    print("\n" + "=" * 50)
+    print(f"ЛУЧШИЙ МЕТОД: {best_result['method']}")
+    print(f"Описание: {best_result['description']}")
+    print(f"ID изображения: {best_result['videoid']}")
+    print(f"Обычная оценка: {best_result['score']:.4f}")
+    print(f"Нормализованная оценка: {best_result['normalized_score']:.4f}")
+    print("=" * 50)
 
 if __name__ == "__main__":
     news = input("Введите текст новости: ")
     csv_path = "dataset/descriptions.csv"  # Путь к файлу с описаниями
-    
-    print("Выберите метод поиска:")
-    print("1. Косинусное сходство")
-    print("2. Евклидово расстояние")
-    print("3. Коэффициент Жаккара")
-    print("4. Семантическое сходство")
-    choice = input("Введите номер метода (1, 2, 3 или 4): ")
-
-
-    
-    if choice == "1":
-        find_image_by_cosine_similarity(news, csv_path)
-    elif choice == "2":
-        find_image_by_euclidean_distance(news, csv_path)
-    elif choice == "3":
-        find_image_by_jaccard_similarity(news, csv_path)
-    elif choice == "4":
-        find_image_by_semantic_similarity(news, csv_path)
-    else:
-        print("Неверный выбор. Метод косинусного сходства по умолчанию.")
-        find_image_by_cosine_similarity(news, csv_path)
+    find_best_method(news, csv_path) 
