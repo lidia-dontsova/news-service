@@ -189,10 +189,10 @@ def find_best_method(news_text, csv_path="dataset/descriptions.csv"):
     ]
     
     # Выводим результаты всех методов
-    print("\nРезультаты всех методов:")
+    print("Результаты всех методов:")
     print("-" * 50)
     for result in results:
-        print(f"\nМетод: {result['method']}")
+        print(f"Метод: {result['method']}")
         print(f"Описание: {result['description']}")
         print(f"ID изображения: {result['videoid']}")
         print(f"Обычная оценка: {result['score']:.4f}")
@@ -210,7 +210,7 @@ def find_best_method(news_text, csv_path="dataset/descriptions.csv"):
     print("=" * 50)
 
 def analyze_entire_dataset():
-    """Анализирует весь датасет BBC News и определяет лучший метод для каждой новости"""
+    
     # Загрузка датасета 
     bbc_df = pd.read_csv("dataset/bbc-news-data.csv", 
                         sep='\t',  
@@ -228,7 +228,7 @@ def analyze_entire_dataset():
     }
     
     # Анализ каждой новости
-    print(f"\nАнализ {len(bbc_df)} новостей из датасета BBC...")
+    print(f"Анализ {len(bbc_df)} новостей из датасета BBC...")
     for _, row in tqdm(bbc_df.iterrows(), total=len(bbc_df)):
         news_text = row['content']  
         
@@ -267,10 +267,10 @@ def analyze_entire_dataset():
     
     # Сохраняем график
     plt.savefig('best_methods_distribution.png')
-    print("\nГрафик сохранен в файл 'best_methods_distribution.png'")
+    print("График сохранен в файл 'best_methods_distribution.png'")
     
     # Выводим статистику
-    print("\nСтатистика по методам:")
+    print("Статистика по методам:")
     total_news = sum(method_counts.values())
     for method, count in method_counts.items():
         percentage = (count / total_news) * 100
