@@ -10,6 +10,8 @@ from nltk.corpus import stopwords
 from gensim.models import Word2Vec
 from gensim.models import KeyedVectors
 from sentence_transformers import SentenceTransformer, util
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def translate_to_english(text):
     return GoogleTranslator(source='auto', target='en').translate(text)
@@ -177,7 +179,7 @@ def find_image_by_semantic_similarity(news_text, csv_path):
         'normalized_score': semantic_score  # Семантическое сходство уже нормализовано от 0 до 1
     }
 
-def find_best_method(news_text, csv_path):
+def find_best_method(news_text, csv_path="dataset/descriptions.csv"):
     # Получаем результаты всех методов
     results = [
         find_image_by_cosine_similarity(news_text, csv_path),
@@ -207,7 +209,84 @@ def find_best_method(news_text, csv_path):
     print(f"Нормализованная оценка: {best_result['normalized_score']:.4f}")
     print("=" * 50)
 
+def analyze_entire_dataset():
+    """Анализирует весь датасет BBC News и определяет лучший метод для каждой новости"""
+    # Загрузка датасета 
+    bbc_df = pd.read_csv("dataset/bbc-news-data.csv", 
+                        sep='\t',  
+                        encoding='utf-8')
+    
+    # Берем только первые 10 новостей
+    bbc_df = bbc_df.head(10)
+    
+    # Счетчики для каждого метода
+    method_counts = {
+        'Косинусное сходство': 0,
+        'Евклидово расстояние': 0,
+        'Коэффициент Жаккара': 0,
+        'Семантическое сходство': 0
+    }
+    
+    # Анализ каждой новости
+    print(f"\nАнализ {len(bbc_df)} новостей из датасета BBC...")
+    for _, row in tqdm(bbc_df.iterrows(), total=len(bbc_df)):
+        news_text = row['content']  
+        
+        # Получаем результаты всех методов
+        results = [
+            find_image_by_cosine_similarity(news_text, "dataset/descriptions.csv"),
+            find_image_by_euclidean_distance(news_text, "dataset/descriptions.csv"),
+            find_image_by_jaccard_similarity(news_text, "dataset/descriptions.csv"),
+            find_image_by_semantic_similarity(news_text, "dataset/descriptions.csv")
+        ]
+        
+        # Находим лучший метод
+        best_result = max(results, key=lambda x: x['normalized_score'])
+        method_counts[best_result['method']] += 1
+    
+    # Визуализация результатов
+    plt.figure(figsize=(12, 6))
+    methods = list(method_counts.keys())
+    counts = list(method_counts.values())
+    
+    # Создаем столбчатую диаграмму
+    bars = plt.bar(methods, counts)
+    
+    # Добавляем значения над столбцами
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                f'{height}',
+                ha='center', va='bottom')
+    
+    plt.title('Распределение лучших методов по всему датасету BBC News')
+    plt.xlabel('Метод')
+    plt.ylabel('Количество раз, когда метод был лучшим')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    # Сохраняем график
+    plt.savefig('best_methods_distribution.png')
+    print("\nГрафик сохранен в файл 'best_methods_distribution.png'")
+    
+    # Выводим статистику
+    print("\nСтатистика по методам:")
+    total_news = sum(method_counts.values())
+    for method, count in method_counts.items():
+        percentage = (count / total_news) * 100
+        print(f"{method}: {count} раз ({percentage:.1f}%)")
+
 if __name__ == "__main__":
-    news = input("Введите текст новости: ")
-    csv_path = "dataset/descriptions.csv"  # Путь к файлу с описаниями
-    find_best_method(news, csv_path) 
+    print("Выберите:")
+    print("1. Ввести текст новости вручную")
+    print("2. Проанализировать весь датасет BBC News")
+    choice = input("Введите номер (1 или 2): ")
+    
+    if choice == "1":
+        news = input("Введите текст новости: ")
+        find_best_method(news)
+    elif choice == "2":
+        analyze_entire_dataset()
+    else:
+        print("Неверный выбор. Анализ всего датасета.")
+        analyze_entire_dataset() 
