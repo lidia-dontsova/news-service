@@ -151,29 +151,33 @@ def find_image_by_semantic_similarity(news_text, csv_path):
     
     print(f"Наиболее подходящее описание: {best_description}")
     print(f"ID изображения (videoid): {best_videoid}")
-    print(f"Семантическое сходство: {similarities[best_index]:.4f}")
+    print(f"Косинусное сходство: {similarities[best_index]:.4f}")
 
 if __name__ == "__main__":
     news = input("Введите текст новости: ")
     csv_path = "dataset/descriptions.csv"  # Путь к файлу с описаниями
     
     print("Выберите метод поиска:")
-    print("1. Косинусное сходство")
-    print("2. Евклидово расстояние")
-    print("3. Коэффициент Жаккара")
-    print("4. Семантическое сходство")
-    choice = input("Введите номер метода (1, 2, 3 или 4): ")
+    print("1. Метод векторизации")
+    print("2. Коэффициент Жаккара")
+    choice = input("Введите номер метода (1 или 2): ")
 
 
     
     if choice == "1":
-        find_image_by_cosine_similarity(news, csv_path)
+        print("Выберите метод:")
+        print("1. TF-IDF Косинусное сходство")
+        print("2. TF-IDF Евклидово расстояние")
+        print("3. BERT Косинусное сходство")
+        choice2 = input("Введите номер метода (1, 2 или 3):")
+        if choice2 == "1":
+            find_image_by_cosine_similarity(news, csv_path)
+        elif choice2 == "2":
+            find_image_by_euclidean_distance(news, csv_path)
+        elif choice2 == "3":
+            find_image_by_semantic_similarity(news, csv_path)
     elif choice == "2":
-        find_image_by_euclidean_distance(news, csv_path)
-    elif choice == "3":
         find_image_by_jaccard_similarity(news, csv_path)
-    elif choice == "4":
-        find_image_by_semantic_similarity(news, csv_path)
     else:
-        print("Неверный выбор. Метод косинусного сходства по умолчанию.")
-        find_image_by_cosine_similarity(news, csv_path)
+        print("Неверный выбор. Метод коэффициента Жаккара по умолчанию.")
+        find_image_by_jaccard_similarity(news, csv_path)
